@@ -1,1 +1,1 @@
-# tool_zalo
+python -m PyQt6.uic.pyuic -x gui_fb.ui -o gui.py

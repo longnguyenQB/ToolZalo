@@ -76,7 +76,6 @@ def select_get_value(conn, table, id, column):
     return cur.fetchall()[0]
 
 def get_columns_name(conn, table):
-    print(table)
     cur = conn.cursor()
     cur.execute(f"select * from {table} where 1=2")
     column_names = [i[0] for i in cur.description]

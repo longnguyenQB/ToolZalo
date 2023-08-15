@@ -5,6 +5,7 @@ from PyQt5.QtGui import *
 import unidecode
 import os
 import sys
+import pandas as pd
 sys.path.append(os.getcwd())
 from SqliteHelper.SqliteHelper import *
 from utils import *
@@ -39,21 +40,28 @@ class ButtonOpenFileDialog(QWidget):
             fname = QFileDialog.getOpenFileName(self, caption= "Open File", directory = "", filter = "All Files (*);; txt file (*.txt)")
             if fname:
                 path = fname[0]
-                if ".txt" in path:
-                    contents = open_txt(path=path)
+                if ".xlsx" in path:
+                    df = pd.read_excel(path)
+                    df['phone'] = df['phone'].astype(str)
+                    df['path'] = df['path'].astype(str)
                     conn = create_connection(PATH + f"/database/database_{self.table_name}.db")
                     delete_table(conn=conn, table=self.table_name)
                     query_create_table = f"""CREATE TABLE IF NOT EXISTS {self.table_name} (
                                         id integer PRIMARY KEY AUTOINCREMENT,
-                                        phone_or_url text NOT NULL,
-                                        status text,
+                                        name text,
+                                        phone text,
+                                        content text,
+                                        path text,
                                         state text
                                     );"""
                     create_table(conn=conn, query=query_create_table)
-                    for content in contents:
-                        insert_table(conn=conn, table=self.table_name,
-                                    columns=['phone_or_url'],
-                                    values=[content],
+                    for i in range(len(df)):
+                        row = list(df.iloc[i])
+                        row.append("Unknow")
+                        insert_table(conn=conn, 
+                                    table=self.table_name,
+                                    columns=['name', 'phone', 'content', 'path', 'state'],
+                                    values=row[1:],
                                     realtime = False)
                     conn.commit()
                 self.signal_path.emit(self.table_name, query)
@@ -104,7 +112,7 @@ class Ui_ImportWindown(QtWidgets.QMainWindow):
             self.path=PATH + "/settings/ListMessSpam.txt"
             
         pre_content = open_txt(self.path)
-        pre_content = '\n'.join(pre_content)
+        pre_content = '/n'.join(pre_content)
         self.plainTextEdit.setPlainText(pre_content)
         self.btnSave.clicked.connect(self.btnSaveClick)
     
@@ -125,7 +133,7 @@ class MyBar(QWidget):
         super(MyBar, self).__init__(parent)
         self.setAutoFillBackground(True)
         
-        self.setBackgroundRole(QPalette.Shadow)
+        self.setBackgroundRole(QPalette.Highlight)
         # alternatively:
         # palette = self.palette()
         # palette.setColor(palette.Window, Qt.black)
@@ -138,8 +146,14 @@ class MyBar(QWidget):
 
         self.title = QLabel("My Own Bar", self, alignment=Qt.AlignCenter)
         # if setPalette() was used above, this is not required
-        self.title.setForegroundRole(QPalette.Light)
-
+        self.title.setForegroundRole(QPalette.Dark)
+        
+        #logo
+        self.label = QLabel(self, alignment=Qt.AlignLeft )
+        self.pixmap = QPixmap('D:\Project\tool_zalo\img\LOGO_white_nottext.png')
+        self.label.setPixmap(self.pixmap)
+        # self.label.resize(50,
+        #                   50)
         style = self.style()
         ref_size = self.fontMetrics().height()
         ref_size += style.pixelMetric(style.PM_ButtonMargin) * 2

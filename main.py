@@ -5,27 +5,61 @@ from SqliteHelper.SqliteHelper import *
 from utils import *
 from Widgets.Widgets import *
 from Widgets.Threads import *
-from ZaloController.ZaloController import AutoZalo
+from Auth.auth import *
+from datetime import date
 import unidecode
 import os
 import sys
-
+import machineid
+import hashlib
+import pandas as pd
+from Register import LoginForm
 PATH = os.getcwd()
-config = read_js("config.json")
 
+id_machine = str(machineid.hashed_id()) + str(int(hashlib.sha256("GenZ LT".encode('utf-8')).hexdigest(), 16) % 10**8)
 
-class Ui_MainWindow(object):
-    def setupUi(self, MainWindow):
-        self.MainWindow = MainWindow
-        
-        MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1071, 844)
+class Ui_MainWindow(QMainWindow):
+    def __init__(self):
+        super(Ui_MainWindow, self).__init__()
+        self.setStyleSheet(
+            """
+            QPushButton {
+                border-style: outset;
+                border-radius: 0px;
+                padding: 6px;
+            }
+            QPushButton:hover {
+                background-color: #cf7500;
+                border-style: inset;
+            }
+            QPushButton:pressed {
+                background-color: #ffa126;
+                border-style: inset;
+            }
+            """
+        )
         # set logo
-        MainWindow.setWindowIcon(QtGui.QIcon(PATH + '/img/item.png'))
+        self.setWindowIcon(QtGui.QIcon(PATH + '/img/logo.png'))
+        self.setWindowTitle( "Tool Zalo")
+        # set title bar:
+        # self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
+        # self.titleBar = MyBar(self)
+        # self.setContentsMargins(0, self.titleBar.height(), 0, 0)
+
+        # self.resize(640, self.titleBar.height() + 800)
         
-        self.centralwidget = QtWidgets.QWidget(parent=MainWindow)
+        df = get_sheet_data('Keys', 'zalo' )
+        if len(df[(df['Keys'] == id_machine) & (df['Status'] == 'Thành công')]) !=0:
+            pass
+        else:
+            app = QtWidgets.QApplication(sys.argv)
+            login_form = LoginForm()
+            login_form.show()
+            sys.exit(app.exec_())
+    
+        self.centralwidget = QtWidgets.QWidget(parent=self)
         self.centralwidget.setObjectName("centralwidget")
-        # self.centralwidget.setStyleSheet('QWidget#centralwidget { background-image: url(bg1.jpg)}')
+        self.centralwidget.setStyleSheet(".QWidget{background-color: rgb(20, 20, 40);}")
         self.gridLayout = QtWidgets.QGridLayout(self.centralwidget)
         self.gridLayout.setObjectName("gridLayout")
         
@@ -34,13 +68,16 @@ class Ui_MainWindow(object):
         self.groupBox_setting.setMaximumSize(QtCore.QSize(16777215, 200))
         self.groupBox_setting.setObjectName("groupBox_setting")
         self.groupBox_setting.setStyleSheet("background-color:white")
+        self.groupBox_setting.setTitle( "Cấu hình chung")
         self.gridLayout_2 = QtWidgets.QGridLayout(self.groupBox_setting)
         self.gridLayout_2.setObjectName("gridLayout_2")
         self.label_2 = QtWidgets.QLabel(parent=self.groupBox_setting)
         self.label_2.setObjectName("label_2")
+        self.label_2.setText("Thời gian mở (s)")
         self.gridLayout_2.addWidget(self.label_2, 1, 0, 1, 3)
         self.label = QtWidgets.QLabel(parent=self.groupBox_setting)
         self.label.setObjectName("label")
+        self.label.setText( "Size hình")
         self.gridLayout_2.addWidget(self.label, 3, 0, 1, 1)
         
         self.spinBox_setting_1 = QtWidgets.QSpinBox(parent=self.groupBox_setting)
@@ -48,14 +85,9 @@ class Ui_MainWindow(object):
         self.spinBox_setting_1.setProperty("value", 5)
         self.gridLayout_2.addWidget(self.spinBox_setting_1, 0, 3, 1, 1)
         
-        self.comboBox_typelogin = QtWidgets.QComboBox(parent=self.groupBox_setting)
-        self.comboBox_typelogin.setObjectName("comboBox_typelogin")
-        self.comboBox_typelogin.addItem("")
-        self.comboBox_typelogin.addItem("")
-        self.gridLayout_2.addWidget(self.comboBox_typelogin, 2, 2, 1, 2)
-        
         self.label_4 = QtWidgets.QLabel(parent=self.groupBox_setting)
         self.label_4.setObjectName("label_4")
+        self.label_4.setText("Số luồng")
         self.gridLayout_2.addWidget(self.label_4, 0, 0, 1, 2)
         
         # Set time open
@@ -64,12 +96,24 @@ class Ui_MainWindow(object):
         self.spinBox_setting_2.setProperty("value", 3)
         self.gridLayout_2.addWidget(self.spinBox_setting_2, 1, 3, 1, 1)
         
+        # Set type login
         self.label_3 = QtWidgets.QLabel(parent=self.groupBox_setting)
         self.label_3.setObjectName("label_3")
+        self.label_3.setText("Kiểu đăng nhập")
         self.gridLayout_2.addWidget(self.label_3, 2, 0, 1, 2)
+        
+        self.comboBox_typelogin = QtWidgets.QComboBox(parent=self.groupBox_setting)
+        self.comboBox_typelogin.setObjectName("comboBox_typelogin")
+        self.comboBox_typelogin.setMinimumHeight(30)
+        self.comboBox_typelogin.addItem("")
+        self.comboBox_typelogin.addItem("")
+        self.comboBox_typelogin.setItemText(0, "Phone-Pass-Cookie")
+        self.comboBox_typelogin.setItemText(1, "Quét QR")
+        self.gridLayout_2.addWidget(self.comboBox_typelogin, 2, 2, 1, 2)
         
         self.label_5 = QtWidgets.QLabel(parent=self.groupBox_setting)
         self.label_5.setObjectName("label_5")
+        self.label_5.setText("<html><head/><body><p align=\"center\"><span style=\" font-size:8pt; font-weight:600;\">X</span></p></body></html>")
         self.gridLayout_2.addWidget(self.label_5, 3, 2, 1, 1)
         
         # Set size windowns
@@ -106,6 +150,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.scrollArea, 0, 1, 4, 1)
         self.groupBox_action = QtWidgets.QGroupBox(parent=self.scrollAreaWidgetContents)
         self.groupBox_action.setTitle("Chọn hành động: ")
+        self.groupBox_action.setStyleSheet("background-color:white")
         self.groupBox_action.setObjectName(f"groupBox_action")
         
         self.horizontalLayout_action = QtWidgets.QHBoxLayout(self.groupBox_action)
@@ -126,12 +171,15 @@ class Ui_MainWindow(object):
         self.pushButton_import_acc.setStyleSheet("background-color:rgb(255, 255, 0)")
         self.pushButton_import_acc.setObjectName("pushButton_import_acc")
         self.gridLayout.addWidget(self.pushButton_import_acc, 1, 0, 1, 1)
+        self.pushButton_import_acc.setText("Nhập acc")
+
         
         # pushButton scan group
         self.pushButton_scan = QtWidgets.QPushButton(parent=self.centralwidget)
         self.pushButton_scan.setStyleSheet("background-color:rgb(255, 100, 0)")
         self.pushButton_scan.setObjectName("pushButton_scan")
         self.gridLayout.addWidget(self.pushButton_scan, 2, 0, 1, 1)
+        self.pushButton_scan.setText("Quét nhóm đã tham gia")
         
         # pushButton for Run
         self.pushButton_Run = QtWidgets.QPushButton(parent=self.centralwidget)
@@ -141,6 +189,7 @@ class Ui_MainWindow(object):
         self.pushButton_Run.setFont(font)
         self.pushButton_Run.setStyleSheet("background-color:rgb(0, 170, 127)")
         self.pushButton_Run.setObjectName("pushButton_Run")
+        self.pushButton_Run.setText("Chạy")
         self.gridLayout.addWidget(self.pushButton_Run, 3, 0, 1, 1)
         
         self.pushButton_Stop = QtWidgets.QPushButton(parent=self.centralwidget)
@@ -150,15 +199,14 @@ class Ui_MainWindow(object):
         self.pushButton_Stop.setFont(font)
         self.pushButton_Stop.setStyleSheet("background-color:rgb(255, 0, 0)")
         self.pushButton_Stop.setObjectName("pushButton_Stop")
+        self.pushButton_Stop.setText("Dừng")
         self.gridLayout.addWidget(self.pushButton_Stop, 4, 0, 1, 1)
         
-        MainWindow.setCentralWidget(self.centralwidget)
-        self.statusbar = QtWidgets.QStatusBar(parent=MainWindow)
+        self.setCentralWidget(self.centralwidget)
+        self.statusbar = QtWidgets.QStatusBar(parent=self)
         self.statusbar.setObjectName("statusbar")
-        MainWindow.setStatusBar(self.statusbar)
+        self.setStatusBar(self.statusbar)
 
-        self.retranslateUi(MainWindow)
-        QtCore.QMetaObject.connectSlotsByName(MainWindow)
         
         # Create layout for filter
         
@@ -182,48 +230,55 @@ class Ui_MainWindow(object):
 
     def scan_group(self):
         self.time_open =  int(self.spinBox_setting_2.value())
-        self.autoZalo = ThreadScan(time_open=self.time_open)
+        type_login = self.comboBox_typelogin.currentText()
+        self.autoZalo = ThreadScan(time_open=self.time_open,
+                                    type_login = type_login)
         self.autoZalo.start()
         self.autoZalo.signal_state.connect(self.load_data)        
     
     def run_actions(self):
         try:
-            type_action = self.comboBox_TypeAction.currentText() 
-            action = self.comboBox_action.currentText() 
-            time_distance = [self.spinBox_action_time_distance1.value(),
-                            self.spinBox_action_time_distance2.value()]
-            self.time_open =  int(self.spinBox_setting_2.value())
-
-            if action == "Spam tin nhắn":
-                if type_action == "Theo danh sách SĐT":
-                    action = 'send_mess_to_phonenumbers'
-                elif type_action == "Theo danh sách Nhóm":
-                    action = 'send_mess_to_members'
-            elif action == "Kết bạn":
-                if type_action == "Theo danh sách SĐT":
-                    action = 'add_friend_from_phonenumbers'
-                elif type_action == "Theo danh sách Nhóm":
-                    action = 'add_friend_from_members'
-            
-                    
             rows = self.tableWidget.selectionModel().selectedIndexes()
-            index_selected = list(set([row.row() for row in rows]))
-            index_selected.sort()
-            self.IDs = {}
-            for index_row in index_selected:
-                self.IDs[self.tableWidget.item(index_row, 0).text()] = index_row
-            
-            self.autoZalo = ThreadsZalo(IDs = list(self.IDs.keys()),
-                            action= action,
-                            time_distance = time_distance,
-                            time_open= self.time_open)
-            self.autoZalo.start()
-            self.autoZalo.signal_state.connect(self.update_table)
+            if len(rows) == 0:
+                self.show_warning_messagebox("Chưa chọn hàng cần chạy!")
+            else:
+                type_login = self.comboBox_typelogin.currentText()
+                type_action = self.comboBox_TypeAction.currentText() 
+                action = self.comboBox_action.currentText() 
+                time_distance = [self.spinBox_action_time_distance1.value(),
+                                self.spinBox_action_time_distance2.value()]
+                self.time_open =  int(self.spinBox_setting_2.value())
+
+                if action == "Spam tin nhắn":
+                    if type_action == "Theo danh sách SĐT":
+                        action = 'send_mess_to_phonenumbers'
+                    elif type_action == "Theo danh sách Nhóm":
+                        action = 'send_mess_to_members'
+                elif action == "Kết bạn":
+                    if type_action == "Theo danh sách SĐT":
+                        action = 'add_friend_from_phonenumbers'
+                    elif type_action == "Theo danh sách Nhóm":
+                        action = 'add_friend_from_members'
+                
+                index_selected = list(set([row.row() for row in rows]))
+                index_selected.sort()
+                self.IDs = {}
+                for index_row in index_selected:
+                    self.IDs[self.tableWidget.item(index_row, 0).text()] = index_row
+                
+                self.autoZalo = ThreadsZalo(IDs = list(self.IDs.keys()),
+                                            type_login = type_login,
+                                            action= action,
+                                            time_distance = time_distance,
+                                            time_open= self.time_open)
+                self.autoZalo.start()
+                self.autoZalo.signal_state.connect(self.update_table)
         except:
             self.show_warning_messagebox("Hãy chọn hành động trước!")
     
     def update_table(self, ID, state):
         state_index = self.get_index_by_column_name("Trạng thái")
+        print(ID, state_index, state)
         self.tableWidget.setItem(self.IDs[ID], state_index, QtWidgets.QTableWidgetItem(state))
     
     def stop_actions(self):
@@ -438,6 +493,17 @@ class Ui_MainWindow(object):
         if "Nhom" in self.type_action:
             group_name = "Nhom"
             number = 1
+            self.label_7 = QtWidgets.QLabel(parent=self.frame_action)
+            self.label_7.setMaximumSize(QtCore.QSize(180, 20))
+            self.label_7.setText("Nhập nội dung tin nhắn:")
+            self.label_7.setObjectName("label_7")
+            self.gridLayout_action.addWidget(self.label_7, number, 0, 1, 1)
+            
+            # pushButton for open another windown for import mess
+            self.pushButton_open = ButtonOpenFileDialog()
+            self.pushButton_open.setupUi(self.centralwidget, "Nhom")
+            self.gridLayout_action.addWidget(self.pushButton_open.pushButton_open, number, 1, 1, 1)
+            self.pushButton_open.signal_path.connect(self.load_data)
         elif "SDT" in self.type_action:
             group_name = "SDT"
             self.label_7_ = QtWidgets.QLabel(parent=self.frame_action)
@@ -452,18 +518,6 @@ class Ui_MainWindow(object):
             self.gridLayout_action.addWidget(self.pushButton_open_dialog.pushButton_open, 1, 1, 1, 1)
             self.pushButton_open_dialog.signal_path.connect(self.load_data)
             number = 2
-                
-        self.label_7 = QtWidgets.QLabel(parent=self.frame_action)
-        self.label_7.setMaximumSize(QtCore.QSize(180, 20))
-        self.label_7.setText("Nhập nội dung tin nhắn:")
-        self.label_7.setObjectName("label_7")
-        self.gridLayout_action.addWidget(self.label_7, number, 0, 1, 1)
-        
-        # pushButton for open another windown for import mess
-        self.pushButton_open = ButtonOpenFileDialog()
-        self.pushButton_open.setupUi(self.centralwidget, "Nhom")
-        self.gridLayout_action.addWidget(self.pushButton_open.pushButton_open, number, 1, 1, 1)
-        self.pushButton_open.signal_path.connect(self.load_data)
         
         query = f"SELECT * FROM {group_name}"
         if os.path.isfile(f".\database\database_{group_name}.db"):
@@ -484,7 +538,6 @@ class Ui_MainWindow(object):
             columns_name = list(map(lambda x: x.replace('group_name', 'Nhóm'), columns_name))
         elif 'SDT' in self.table_name:
             columns_name = list(map(lambda x: x.replace('phone_or_url', 'Số điện thoại'), columns_name))
-        columns_name = list(map(lambda x: x.replace('status', 'Tình trạng'), columns_name))
         columns_name = list(map(lambda x: x.replace('state', 'Trạng thái'), columns_name))
         # columns_name.insert(0,"Chọn")
         self.tableWidget = QtWidgets.QTableWidget(parent=self.centralwidget)
@@ -539,11 +592,11 @@ class Ui_MainWindow(object):
             valuesUnique = [self.tableWidget.item(row, self.logicalIndex).text() for row in range(self.tableWidget.rowCount()) if not self.tableWidget.isRowHidden(row)]
 
             # Mở cửa sổ con
-            self.Menudialog = QDialog(parent=MainWindow)
+            self.Menudialog = QDialog(parent=self)
             self.Menudialog.setWindowTitle('Chọn giá trị cần lọc')
             self.Menudialog.setMinimumSize(QtCore.QSize(400, 400))
 
-            self.list_widget = QListWidget(parent=MainWindow)
+            self.list_widget = QListWidget(parent=self)
             valuesUnique = sorted(list(set(valuesUnique)))
             valuesUnique.insert(0, "Tất cả")
             valuesUnique.insert(1, "Bỏ chọn tất cả")
@@ -582,7 +635,6 @@ class Ui_MainWindow(object):
             map_column_name = {"Thành viên": "member_name", 
                                 "Nhóm": "group_name",
                                 "Số điện thoại":  "phone_or_url",
-                                "Tình trạng": "status",
                                 "Trạng thái": "state"}
             column_name = map_column_name[self.tableWidget.horizontalHeaderItem(self.logicalIndex).text()]    
             query = f"SELECT * FROM {self.table_name} WHERE {column_name} == '{item.text()}'"
@@ -623,27 +675,16 @@ class Ui_MainWindow(object):
         # start the app
         retval = msg.exec_()
         
-    def retranslateUi(self, MainWindow):
-        _translate = QtCore.QCoreApplication.translate
-        MainWindow.setWindowTitle(_translate("MainWindow", "Tool Zalo"))
-        self.pushButton_import_acc.setText(_translate("MainWindow", "Nhập acc"))
-        self.pushButton_scan.setText(_translate("MainWindow", "Quét nhóm đã tham gia"))
-        self.groupBox_setting.setTitle(_translate("MainWindow", "Cấu hình chung"))
-        self.label_2.setText(_translate("MainWindow", "Thời gian mở (s)"))
-        self.label.setText(_translate("MainWindow", "Size hình"))
-        self.comboBox_typelogin.setItemText(0, _translate("MainWindow", "Mail-Pass"))
-        self.comboBox_typelogin.setItemText(1, _translate("MainWindow", "UID FB-Pass-2FA"))
-        self.label_4.setText(_translate("MainWindow", "Số luồng"))
-        self.label_3.setText(_translate("MainWindow", "Kiểu đăng nhập"))
-        self.label_5.setText(_translate("MainWindow", "<html><head/><body><p align=\"center\"><span style=\" font-size:8pt; font-weight:600;\">X</span></p></body></html>"))
-        self.pushButton_Run.setText(_translate("MainWindow", "Chạy"))
-        self.pushButton_Stop.setText(_translate("MainWindow", "Dừng"))
+    # def changeEvent(self, event):
+    #     if event.type() == event.WindowStateChange:
+    #         self.titleBar.windowStateChanged(self.windowState())
+    # def resizeEvent(self, event):
+    #     self.titleBar.resize(self.width(), self.titleBar.height()+1000)
+
     
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-    MainWindow = QtWidgets.QMainWindow()
-    ui = Ui_MainWindow()
-    ui.setupUi(MainWindow)
-    MainWindow.show()
+    main = Ui_MainWindow()
+    main.show()
     sys.exit(app.exec())
